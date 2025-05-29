@@ -1,5 +1,4 @@
-# Laporan Proyek Machine Learning - Dhea Rachma Febiana - Rekomendasi Lagu Populer
-
+# Laporan Proyek Machine Learning - Dhea Rachma Febiana
 ## Project Overview
 
 Revolusi digital mengubah cara bagaimana pelanggan menikmati dan mengakses musik secara signifikan.  Industri musik telah mengalami pergeseran menuju layanan streaming musik yang berbasis langganan sejak awal tahun 2000-an.  Dengan munculnya platform streaming musik seperti Spotify, Apple Music, Amazon Music, dan YouTube Music, pergeseran ini mencapai puncaknya di pasar musik global.  Sebuah laporan oleh International Federation of the Phonographic Industry (IFPI) menyatakan bahwa pada tahun 2024, streaming musik akan menyumbang lebih dari 67% dari pendapatan industri musik global, dengan total pendapatan diperkirakan mencapai $17.5 miliar.  Fenomena ini tidak hanya mengubah struktur bisnis industri musik, tetapi juga menimbulkan masalah baru tentang cara pengguna mendengarkan dan menemukan musik.
@@ -65,7 +64,9 @@ Dataset: https://www.kaggle.com/datasets/solomonameh/spotify-music-dataset?selec
 - track_popularity: Tidak digunakan karena rekomendasi tidak berbasis popularitas.
 - track_album_release_date: Informasi tanggal, tidak relevan dalam model berbasis konten audio.
 - playlist_subgenre: Redundan dengan playlist_genre.
+- playlist_name: Nama playlist tempat lagu tersebut berasal di dalam dataset. Meskipun menunjukkan konteks koleksi lagu, fitur ini tidak digunakan dalam pemodelan karena informasi genre sudah terwakili oleh fitur playlist_genre.
 - mode, key, duration_ms, time_signature: Tidak dipilih karena kontribusi terhadap similarity dianggap minimal berdasarkan korelasi dan eksperimen awal.
+- Track_album_name: Merupakan nama album dari lagu terkait. Fitur ini hanya bersifat informatif dan tidak digunakan sebagai fitur dalam sistem rekomendasi, namun diperiksa karena mengandung nilai kosong (missing value) pada 1 entri.
 
 ### Exploratory Data Analysis (EDA)
 1. Analisis Univariate
@@ -227,13 +228,14 @@ recommend_similar_songs("Ghostride")
 ```
 Jika pengguna memasukkan "Ghostride", sistem akan merekomendasikan 5 lagu teratas yang paling mirip dari sisi fitur audio, seperti berikut:
 
-| No | track_name                               | track_artist                                        | playlist_genre | similarity_score |
-|----|-------------------------------------------|-----------------------------------------------------|----------------|------------------|
-| 1  | Ghostride                                 | Crumb                                               | pop            | 0.969791         |
-| 2  | Experience                                | Ludovico Einaudi, Daniel Hope, I Virtuosi Italiani | classical      | 0.899723         |
-| 3  | Anchor                                    | Novo Amor                                           | ambient        | 0.895345         |
-| 4  | Instant Crush (feat. Julian Casablancas) | Daft Punk, Julian Casablancas                      | rock           | 0.879868         |
-| 5  | Black Friday (pretty like the sun)        | Lost Frequencies, Tom Odell                         | gaming         | 0.875253         |
+| No. | Track Name                                | Track Artist                                           | Playlist Genre | Similarity Score |
+|-----|-------------------------------------------|--------------------------------------------------------|----------------|------------------|
+| 1   | Ghostride                                 | Crumb                                                  | pop            | 0.970153         |
+| 2   | Experience                                | Ludovico Einaudi, Daniel Hope, I Virtuosi Italiani     | classical      | 0.911168         |
+| 3   | Anchor                                    | Novo Amor                                              | ambient        | 0.907147         |
+| 4   | Black Friday (pretty like the sun)        | Lost Frequencies, Tom Odell                            | gaming         | 0.890674         |
+| 5   | Instant Crush (feat. Julian Casablancas)  | Daft Punk, Julian Casablancas                          | rock           | 0.879483         |
+
 
 
 ## Evaluation
@@ -242,10 +244,10 @@ Untuk memahami pola kemiripan antar lagu secara keseluruhan, semua nilai dari ma
 
 ![image](https://github.com/user-attachments/assets/b49a39f2-07e8-4968-8d2c-21fb4e631219)
 
-Hasil visualisasi menunjukkan bahwa sebagian besar pasangan lagu memiliki skor similarity rendah (< 0.5), sementara hanya sebagian kecil yang memiliki skor tinggi (> 0.8). Ini menunjukkan bahwa sistem mampu membedakan karakteristik audio antar lagu dengan cukup baik, dan hanya menganggap sedikit lagu yang benar-benar mirip — hal yang ideal dalam sistem rekomendasi berbasis konten.
+Berdasarkan hasil visualisasi distribusi cosine similarity, terlihat bahwa sebagian besar pasangan lagu memiliki skor kemiripan yang rendah, dengan puncak distribusi berada di sekitar nilai 0. Hal ini menunjukkan bahwa mayoritas kombinasi lagu dalam dataset tidak memiliki kemiripan yang signifikan berdasarkan fitur konten yang dianalisis. Hanya sebagian kecil pasangan lagu yang memiliki similarity tinggi (misalnya > 0.5), dan sangat sedikit yang mendekati nilai maksimal (1.0). Kondisi ini mencerminkan bahwa sistem rekomendasi berbasis konten ini berhasil menangkap perbedaan karakteristik antar lagu secara detail, sehingga hanya lagu-lagu yang benar-benar mirip yang akan direkomendasikan, sebuah kondisi yang ideal untuk mencegah over-recommendation dan meningkatkan relevansi rekomendasi.
 
 2.  Intra-List Similarity (ILS)
-Metrik utama yang digunakan adalah Intra-List Similarity (ILS). ILS mengukur konsistensi kemiripan antar item dalam satu daftar rekomendasi. Semakin tinggi skor ILS, semakin mirip item-item dalam daftar tersebut — artinya sistem berhasil memberikan hasil yang homogen secara konten.
+Metrik utama yang digunakan adalah Intra-List Similarity (ILS). ILS mengukur konsistensi kemiripan antar item dalam satu daftar rekomendasi. Semakin tinggi skor ILS, semakin mirip item-item dalam daftar tersebut, artinya sistem berhasil memberikan hasil yang homogen secara konten.
 
 Formula ILS:
 ILS dihitung sebagai rata-rata skor cosine similarity antar item yang direkomendasikan, tanpa menyertakan diagonal (diri sendiri). 
@@ -255,5 +257,5 @@ ILS dihitung sebagai rata-rata skor cosine similarity antar item yang direkomend
 di mana **𝑁** adalah jumlah item dalam daftar rekomendasi.
 
 Hasil Evaluasi:
-Contoh evaluasi dengan input lagu "Ghostride" menghasilkan rekomendasi dengan skor ILS sekitar 0.62. Artinya, lagu-lagu yang direkomendasikan memiliki tingkat kemiripan internal yang cukup tinggi, sesuai dengan pendekatan content-based filtering. Ini menunjukkan bahwa sistem dapat mengembalikan daftar lagu yang secara karakteristik audio konsisten dan sesuai dengan lagu acuan.
+Contoh evaluasi dengan input lagu "Ghostride" menghasilkan rekomendasi dengan skor ILS sekitar 0.63. Artinya, lagu-lagu yang direkomendasikan memiliki tingkat kemiripan internal yang cukup tinggi, sesuai dengan pendekatan content-based filtering. Ini menunjukkan bahwa sistem dapat mengembalikan daftar lagu yang secara karakteristik audio konsisten dan sesuai dengan lagu acuan.
 
